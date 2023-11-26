@@ -64,7 +64,7 @@ public class VttParser implements SubtitleParser {
         CursorStatus cursorStatus = CursorStatus.NONE;
         VttCue cue = null;
         String cueText = ""; // Text of the cue
-
+        int skipLines = skipLines(br);
         while ((textLine = br.readLine()) != null) {
             textLine = textLine.trim();
 
@@ -105,6 +105,10 @@ public class VttParser implements SubtitleParser {
             // Second textLine defines the start and end time codes
             // 00:01:21.456 --> 00:01:23.417
             if (cursorStatus == CursorStatus.CUE_ID) {
+                if (skipLines >= 0) {
+                    skipLines--;
+                    continue;
+                }
                 if (textLine.length() < 29 ||
                     !textLine.substring(13, 16).equals("-->")
                 ) {
@@ -314,5 +318,17 @@ public class VttParser implements SubtitleParser {
             throw new SubtitleParsingException(String.format(
                     "Unable to parse time code: %s", timeCodeString));
         }
+    }
+    private int skipLines(BufferedReader bufferedReader) {
+        String textLine = "";
+        int toSkipLine = 0;
+        int current = 0;
+        while ((textLine = bufferedReader.readLine()) != null) {
+            if (textLine.substring(13, 16).equals("-->")) {
+                toSkipLine = current - 1; //
+            }
+            current++;
+        }
+        return toSkipLine;
     }
 }
